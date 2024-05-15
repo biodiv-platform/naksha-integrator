@@ -1,0 +1,13 @@
+{
+    "modelPackage": "com.strandls.nakshaintegrator.pojo",
+    "apiPackage": "com.strandls.nakshaintegrator.controllers",
+    "invokerPackage": "com.strandls.nakshaintegrator",
+    "groupId": "com.strandls.biodiv",
+    "artifactId": "nakshaIntegrator-client",
+    "artifactVersion": "1.0.0",
+    "fullJavaUtil": true,
+    "dateLibrary": "legacy",
+    "library": "jersey2",
+    "developerName": "Prakhar Dev Singh",
+    "java8": true
+  }
