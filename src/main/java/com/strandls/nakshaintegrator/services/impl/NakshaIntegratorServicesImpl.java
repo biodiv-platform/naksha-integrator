@@ -62,6 +62,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
 		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
+		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
 
 		try {
 
@@ -78,6 +79,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 			HttpGet request = new HttpGet(Uri);
 
 			request.setHeader("Portal-Id", portalId);
+			request.setHeader("api-key", apikey);
 
 			httpclient = HttpClients.createDefault();
 
