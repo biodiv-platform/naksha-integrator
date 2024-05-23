@@ -86,4 +86,18 @@ public class NakshaIntegratorController {
 		}
 	}
 
+	@Path("onClick/{layer}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Get layer information for the layer on click", response = Map.class, responseContainer = "List")
+	public Response getLayerInfoOnClick(@PathParam("layer") String layer) {
+		try {
+			Map<String, Object> onClickLayerInfo = nakshaIntegratorServices.getLayerInfo(layer);
+			return Response.ok().entity(onClickLayerInfo).build();
+		} catch (Exception e) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+		}
+	}
+
 }

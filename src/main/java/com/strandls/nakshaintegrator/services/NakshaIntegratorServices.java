@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Response;
 
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
@@ -18,5 +20,7 @@ public interface NakshaIntegratorServices {
 			boolean showOnlyPending);
 
 	public Map<String, Object> uploadLayer(HttpServletRequest request, FormDataMultiPart multiPart);
+
+	public Map<String, Object> getLayerInfo(String layer);
 
 }
