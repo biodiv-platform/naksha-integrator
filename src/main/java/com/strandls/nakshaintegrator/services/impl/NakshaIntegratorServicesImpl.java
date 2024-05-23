@@ -258,4 +258,19 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		return result;
 	}
 
+	public Map<String, Object> getLayerInfo(String layer) {
+
+		String uri = "/naksha-api/api/layer/onClick/" + layer;
+		Map<String, Object> result = null;
+		byte[] ans = getRequest(uri, null);
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			result = mapper.readValue(ans, new TypeReference<HashMap<String, Object>>() {
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
 }
