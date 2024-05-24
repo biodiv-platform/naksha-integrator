@@ -3,6 +3,12 @@
  */
 package com.strandls.nakshaintegrator.controllers;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +28,11 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.Response.Status;
 
+//import org.apache.commons.io.IOUtils;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 import com.strandls.nakshaintegrator.ApiConstants;
@@ -138,6 +147,42 @@ public class NakshaIntegratorController {
 			throw new WebApplicationException(
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
 		}
+	}
+
+	@Path("download/{hashKey}/{layerName}")
+	@GET
+	@Consumes(MediaType.TEXT_PLAIN)
+	@Produces("application/zip")
+	@ApiOperation(value = "Download the shp file", notes = "Return the shp file", response = StreamingOutput.class)
+	public Response download(@PathParam("hashKey") String hashKey, @PathParam("layerName") String layerName) {
+
+		byte[] fileData = nakshaIntegratorServices.downloadShpFile(hashKey, layerName);
+
+		if (fileData.length == 0) {
+			return Response.status(Response.Status.NOT_FOUND).build();
+		} else {
+			// Return the file data as a streaming output
+			StreamingOutput stream = new StreamingOutput() {
+				@Override
+				public void write(OutputStream output) throws IOException {
+					try {
+						output.write(fileData);
+						output.flush();
+					} catch (Exception e) {
+						throw new WebApplicationException(
+								Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+					}
+				}
+			};
+
+			// Set the Content-Disposition header to prompt a download dialog in the browser
+			ContentDisposition contentDisposition = ContentDisposition.type("attachment")
+					.fileName(layerName + ".zip")
+					.creationDate(new Date()).build();
+
+			return Response.ok(stream).header("Content-Disposition", contentDisposition).build();
+		}
+
 	}
 
 }

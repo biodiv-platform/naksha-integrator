@@ -27,4 +27,6 @@ public interface NakshaIntegratorServices {
 
 	public Map<String, Object> makeLayerActive(String layerName);
 
+	public byte[] downloadShpFile(String hashKey, String layerName);
+
 }

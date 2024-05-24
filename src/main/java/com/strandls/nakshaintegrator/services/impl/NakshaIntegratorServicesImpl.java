@@ -358,4 +358,10 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		return result;
 	}
 
+	@Override
+	public byte[] downloadShpFile(String hashKey, String layerName) {
+		String uri = String.format("/naksha-api/api/layer/download/%s/%s", hashKey, layerName);
+		return getRequest(uri, null);
+	}
+
 }
