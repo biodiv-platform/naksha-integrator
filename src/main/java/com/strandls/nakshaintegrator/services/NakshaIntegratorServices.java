@@ -23,4 +23,8 @@ public interface NakshaIntegratorServices {
 
 	public Map<String, Object> getLayerInfo(String layer);
 
+	public Map<String, Object> makeLayerPending(String layerName);
+
+	public Map<String, Object> makeLayerActive(String layerName);
+
 }

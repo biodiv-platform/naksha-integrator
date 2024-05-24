@@ -13,6 +13,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -27,6 +28,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 import com.strandls.nakshaintegrator.ApiConstants;
 import com.strandls.nakshaintegrator.services.NakshaIntegratorServices;
+import com.strandls.nakshaintegrator.util.Utils;
 import com.strandls.authentication_utility.filter.ValidateUser;
 
 import io.swagger.annotations.Api;
@@ -94,6 +96,44 @@ public class NakshaIntegratorController {
 		try {
 			Map<String, Object> onClickLayerInfo = nakshaIntegratorServices.getLayerInfo(layer);
 			return Response.ok().entity(onClickLayerInfo).build();
+		} catch (Exception e) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+		}
+	}
+
+	@Path("pending/{layer}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Make the layer pending", response = Map.class)
+	@ValidateUser
+	public Response makeLayerPending(@Context HttpServletRequest request, @PathParam("layer") String layer) {
+		try {
+			if (!Utils.isAdmin(request)) {
+				throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED)
+						.entity("Only admin can make the layer pending").build());
+			}
+			Map<String, Object> result = nakshaIntegratorServices.makeLayerPending(layer);
+			return Response.ok().entity(result).build();
+		} catch (Exception e) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+		}
+	}
+
+	@Path("active/{layer}")
+	@PUT
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Make the layer pending", response = Map.class)
+	@ValidateUser
+	public Response makeLayerActive(@Context HttpServletRequest request, @PathParam("layer") String layer) {
+		try {
+			if (!Utils.isAdmin(request)) {
+				throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED)
+						.entity("Only admin can make the layer pending").build());
+			}
+			Map<String, Object> result = nakshaIntegratorServices.makeLayerActive(layer);
+			return Response.ok().entity(result).build();
 		} catch (Exception e) {
 			throw new WebApplicationException(
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());

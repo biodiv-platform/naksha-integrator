@@ -26,6 +26,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
@@ -188,6 +189,59 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		return byteArrayResponse != null ? byteArrayResponse : new byte[0];
 	}
 
+	private byte[] putRequest(String uri, List<NameValuePair> params) {
+
+		CloseableHttpResponse response = null;
+		CloseableHttpClient httpclient = null;
+		byte[] byteArrayResponse = null;
+
+		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
+		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
+		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
+
+		try {
+
+			// String url =
+			// "https://staging.communityconservedareas.org/naksha-api/api/layer/all?limit=10&offset=0";
+
+			URIBuilder builder = new URIBuilder();
+			builder.setScheme("https").setHost(host).setPath(uri);
+
+			if (params != null)
+				builder.setParameters(params);
+			URI Uri = null;
+			Uri = builder.build();
+			HttpPut request = new HttpPut(Uri);
+
+			request.setHeader("Portal-Id", portalId);
+			request.setHeader("api-key", apikey);
+
+			httpclient = HttpClients.createDefault();
+
+			response = httpclient.execute(request);
+
+			HttpEntity entity = response.getEntity();
+
+			byteArrayResponse = EntityUtils.toByteArray(entity);
+			EntityUtils.consume(entity);
+
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			logger.error("Error while trying to send request at URL {}");
+		} finally {
+			if (byteArrayResponse != null)
+				HttpClientUtils.closeQuietly(response);
+			try {
+				if (httpclient != null)
+					httpclient.close();
+			} catch (IOException e) {
+				logger.error(e.getMessage());
+			}
+		}
+
+		return byteArrayResponse != null ? byteArrayResponse : new byte[0];
+	}
+
 	@Override
 	public List<HashMap<String, Object>> getTOCList(HttpServletRequest request, Integer limit, Integer offset,
 			boolean showOnlyPending) {
@@ -258,11 +312,42 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		return result;
 	}
 
+	@Override
 	public Map<String, Object> getLayerInfo(String layer) {
 
 		String uri = "/naksha-api/api/layer/onClick/" + layer;
 		Map<String, Object> result = null;
 		byte[] ans = getRequest(uri, null);
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			result = mapper.readValue(ans, new TypeReference<HashMap<String, Object>>() {
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	@Override
+	public Map<String, Object> makeLayerPending(String layerName) {
+		String uri = "/naksha-api/api/layer/pending/" + layerName;
+		Map<String, Object> result = null;
+		byte[] ans = putRequest(uri, null);
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			result = mapper.readValue(ans, new TypeReference<HashMap<String, Object>>() {
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	@Override
+	public Map<String, Object> makeLayerActive(String layerName) {
+		String uri = "/naksha-api/api/layer/active/" + layerName;
+		Map<String, Object> result = null;
+		byte[] ans = putRequest(uri, null);
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			result = mapper.readValue(ans, new TypeReference<HashMap<String, Object>>() {
