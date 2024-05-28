@@ -29,4 +29,6 @@ public interface NakshaIntegratorServices {
 
 	public byte[] downloadShpFile(String hashKey, String layerName);
 
+	public Map<String, Object> prepareDownloadLayer(HttpServletRequest request, Map<String, Object> layerDownload);
+
 }

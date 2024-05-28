@@ -119,8 +119,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		return byteArrayResponse != null ? byteArrayResponse : new byte[0];
 	}
 
-	public byte[] postRequestWithMultipartFormData(String uri, List<NameValuePair> params,
-			FormDataMultiPart multiPart) {
+	public byte[] postRequestWithMultipartFormData(String uri, List<NameValuePair> params, FormDataMultiPart multiPart,
+			Map<String, Object> payload) {
 		CloseableHttpResponse response = null;
 		CloseableHttpClient httpclient = null;
 		byte[] byteArrayResponse = null;
@@ -139,8 +139,6 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 			request.setHeader("Portal-Id", portalId);
 			request.setHeader("api-key", apikey);
-
-			System.out.println("fields=" + multiPart.getFields());
 
 			if (multiPart != null) {
 				MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
@@ -163,6 +161,15 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 				HttpEntity multipartEntity = entityBuilder.build();
 				request.setEntity(multipartEntity);
+			}
+
+			if (payload != null) {
+				ObjectMapper objectMapper = new ObjectMapper();
+				String jsonBody = objectMapper.writeValueAsString(payload);
+				StringEntity entity = new StringEntity(jsonBody);
+				request.setHeader("Content-Type", "application/json");
+				request.setEntity(entity);
+
 			}
 
 			httpclient = HttpClients.createDefault();
@@ -299,7 +306,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		String uploaderUserId = userProfile.getId();
 
 		multiPart.field("uploaderUserId", uploaderUserId, MediaType.TEXT_PLAIN_TYPE);
-		byte[] ans = postRequestWithMultipartFormData("/naksha-api/api/layer/upload", null, multiPart);
+		byte[] ans = postRequestWithMultipartFormData("/naksha-api/api/layer/upload", null, multiPart, null);
 		ObjectMapper mapper = new ObjectMapper();
 
 		try {
@@ -362,6 +369,87 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 	public byte[] downloadShpFile(String hashKey, String layerName) {
 		String uri = String.format("/naksha-api/api/layer/download/%s/%s", hashKey, layerName);
 		return getRequest(uri, null);
+	}
+
+	@Override
+	public Map<String, Object> prepareDownloadLayer(HttpServletRequest request, Map<String, Object> layerDownload) {
+
+		Map<String, Object> result = new HashMap<String, Object>();
+		String layerName = (String) layerDownload.get("layerName");
+		String getMetaDataUri = "/naksha-api/api/layer/" + layerName;
+
+		byte[] metaData = getRequest(getMetaDataUri, null);
+		HashMap<String, Object> layerMetaData = null;
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		try {
+			layerMetaData = mapper.readValue(metaData, new TypeReference<HashMap<String, Object>>() {
+			});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		CommonProfile profile = AuthUtil.getProfileFromRequest(request);
+
+		if (!checkDownLoadAccess(profile, layerMetaData)) {
+			result.put("failed", "User is not authorized to download the layer");
+			return result;
+		}
+
+		String uri = "/naksha-api/api/layer/download";
+
+		byte[] ans = postRequestWithMultipartFormData(uri, null, null, layerDownload);
+		// ObjectMapper mapper = new ObjectMapper();
+		try {
+			result = mapper.readValue(ans, new TypeReference<HashMap<String, Object>>() {
+			});
+
+			String filePath = (String) result.get("filePath");
+			String url = "/naksha-integrator-api/api/v1/services/download" + filePath;
+
+			result.put("url", url);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return result;
+
+	}
+
+	private boolean checkDownLoadAccess(CommonProfile profile, Map<String, Object> metaLayer) {
+		if (profile == null)
+			return false;
+
+		// return true if user is admin, irrespective of the portal
+		JSONArray roles = (JSONArray) profile.getAttribute("roles");
+		if (roles.contains("ROLE_ADMIN"))
+			return true;
+
+		if (metaLayer == null)
+			return false;
+
+//		 download access is the property of the portal, hence return true irrespective
+//		 of portal
+//		 if it is All
+		if (metaLayer.get("downloadAccess").equals("All")) {
+			return true;
+		} else {
+			String uploaderPortalId = (String) metaLayer.get("portalId");
+			String loggedinUserPortalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
+
+			if (!uploaderPortalId.equals(loggedinUserPortalId)) {
+				return false;
+			} else {
+				String uploaderId = (String) metaLayer.get("uploaderUserId");
+				String loggedInUserId = profile.getId();
+				if (uploaderId.equals(loggedInUserId)) {
+					return true;
+				} else {
+					return false;
+				}
+			}
+		}
+
 	}
 
 }

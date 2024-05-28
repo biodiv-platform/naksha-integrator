@@ -176,13 +176,30 @@ public class NakshaIntegratorController {
 			};
 
 			// Set the Content-Disposition header to prompt a download dialog in the browser
-			ContentDisposition contentDisposition = ContentDisposition.type("attachment")
-					.fileName(layerName + ".zip")
+			ContentDisposition contentDisposition = ContentDisposition.type("attachment").fileName(layerName + ".zip")
 					.creationDate(new Date()).build();
 
 			return Response.ok(stream).header("Content-Disposition", contentDisposition).build();
 		}
 
+	}
+
+	@Path("download")
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "prepate shape file", notes = "Return the shape file location", response = Map.class)
+	@ValidateUser
+	public Response prepareDownload(@Context HttpServletRequest request,
+			@ApiParam("layerDownload") Map<String, Object> layerDownload) {
+		try {
+			Map<String, Object> retValue = nakshaIntegratorServices.prepareDownloadLayer(request, layerDownload);
+			return Response.ok().entity(retValue).build();
+		} catch (Exception e) {
+			Thread.currentThread().interrupt();
+			throw new WebApplicationException(
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+		}
 	}
 
 }
