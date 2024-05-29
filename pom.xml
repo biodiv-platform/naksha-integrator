@@ -6,7 +6,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.strandls.biodiv</groupId>
-	<artifactId>nakshaIntegrator-client</artifactId>
+	<artifactId>naksha-integrator-api</artifactId>
 	<version>1.0.0</version>
 	<packaging>war</packaging>
 
