@@ -105,6 +105,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		} catch (Exception e) {
 			logger.error(e.getMessage());
 			logger.error("Error while trying to send request at URL {}");
+			
+			System.out.println("host="+host);
 		} finally {
 			if (byteArrayResponse != null)
 				HttpClientUtils.closeQuietly(response);
