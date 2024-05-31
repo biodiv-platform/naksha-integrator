@@ -47,7 +47,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 @Api("Naksha Intergrator Services")
-@Path(ApiConstants.V1 + ApiConstants.SERVICES)
+@Path("/layer")
 public class NakshaIntegratorController {
 
 	@Inject
