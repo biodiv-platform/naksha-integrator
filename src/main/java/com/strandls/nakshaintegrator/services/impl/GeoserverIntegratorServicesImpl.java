@@ -93,4 +93,13 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 		String result = new String(ans);
 		return result;
 	}
+
+	@Override
+	public byte[] getTyles(String layer, String z, String y, String x) {
+		String uri = "/naksha-api/api/geoserver/gwc/service/tms/1.0.0/" + layer + "@EPSG%3A900913@pbf/" + z + "/" + x
+				+ "/" + y + ".pbf";
+		byte[] ans = getRequest(uri, null);
+		// String result = new String(ans);
+		return ans;
+	}
 }

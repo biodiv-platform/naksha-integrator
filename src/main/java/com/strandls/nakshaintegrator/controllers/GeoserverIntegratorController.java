@@ -1,5 +1,7 @@
 package com.strandls.nakshaintegrator.controllers;
 
+import java.io.ByteArrayInputStream;
+
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -9,7 +11,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-
 
 import com.strandls.nakshaintegrator.services.GeoserverIntegratorServices;
 import com.strandls.nakshaintegrator.services.impl.GeoserverIntegratorServicesImpl;
@@ -39,6 +40,21 @@ public class GeoserverIntegratorController {
 		} catch (Exception e) {
 			throw new WebApplicationException(
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+		}
+	}
+
+	@GET
+	@Path("/gwc/service/tms/1.0.0/{layer}/{z}/{x}/{y}")
+	@Produces("application/x-protobuf")
+	@ApiOperation(value = "Fetch Tiles", notes = "Return Tiles", response = ByteArrayInputStream.class)
+	@ApiResponses(value = { @ApiResponse(code = 400, message = "Tiles not found", response = String.class) })
+	public Response fetchTiles(@PathParam("layer") String layer, @PathParam("z") String z, @PathParam("x") String x,
+			@PathParam("y") String y) {
+		byte[] file = geo.getTyles(layer, z, y, x);
+		if (file.length > 0) {
+			return Response.ok(new ByteArrayInputStream(file)).build();
+		} else {
+			return Response.status(Response.Status.BAD_REQUEST).entity("Tiles not found").build();
 		}
 	}
 
