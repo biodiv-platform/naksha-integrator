@@ -16,5 +16,6 @@ public class NakshaIntegratorControllerModule extends AbstractModule {
 	@Override
 	protected void configure() {
 		bind(NakshaIntegratorController.class).in(Scopes.SINGLETON);
+		bind(GeoserverIntegratorController.class).in(Scopes.SINGLETON);
 	}
 }
