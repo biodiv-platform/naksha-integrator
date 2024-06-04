@@ -36,7 +36,6 @@ public class GeoserverIntegratorController {
 	@ApiResponses(value = { @ApiResponse(code = 400, message = "Styles not found", response = String.class) })
 	public Response fetchStyle(@PathParam("workspaces") String workspaces, @PathParam("id") String id) {
 		try {
-			GeoserverIntegratorServicesImpl i = new GeoserverIntegratorServicesImpl();
 			String style = geo.getStyles(workspaces, id);
 			return Response.status(Status.OK).entity(style).build();
 		} catch (Exception e) {
