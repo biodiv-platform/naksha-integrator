@@ -3,10 +3,12 @@ package com.strandls.nakshaintegrator.controllers;
 import java.io.ByteArrayInputStream;
 
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -56,6 +58,29 @@ public class GeoserverIntegratorController {
 		} else {
 			return Response.status(Response.Status.BAD_REQUEST).entity("Tiles not found").build();
 		}
+	}
+
+	@GET
+	@Path("/thumbnails" + "/{workspace}/{id}")
+	@Produces("image/gif")
+	@ApiOperation(value = "Fetch Thumbnails", notes = "Return Thumbnails", response = ByteArrayInputStream.class)
+	@ApiResponses(value = { @ApiResponse(code = 400, message = "Thumbnail not found", response = String.class) })
+	public Response fetchThumbnail(@PathParam("id") String id,
+			@DefaultValue("biodiv") @PathParam("workspace") String wspace, @QueryParam("bbox") String para,
+			@DefaultValue("200") @QueryParam("width") String width,
+			@DefaultValue("200") @QueryParam("height") String height,
+			@DefaultValue("EPSG:4326") @QueryParam("srs") String srs) {
+		try {
+			byte[] file = geo.getThumbnails(id, wspace, para, width, height, srs);
+			if (file.length > 0) {
+				return Response.ok(new ByteArrayInputStream(file)).build();
+			} else {
+				return Response.status(Response.Status.BAD_REQUEST).entity("Tiles not found").build();
+			}
+		} catch (Exception e) {
+			return Response.status(Status.BAD_REQUEST).build();
+		}
+
 	}
 
 }

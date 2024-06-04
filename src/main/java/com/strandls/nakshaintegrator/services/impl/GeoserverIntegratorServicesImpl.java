@@ -2,6 +2,7 @@ package com.strandls.nakshaintegrator.services.impl;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,5 +103,18 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 		byte[] ans = getRequest(uri, null);
 		// String result = new String(ans);
 		return ans;
+	}
+
+	@Override
+	public byte[] getThumbnails(String layer, String workspace, String bbox, String width, String height, String srs) {
+		String uri = "/naksha-api/api/geoserver/thumbnails/" + workspace + "/" + layer;
+		ArrayList<NameValuePair> params = new ArrayList<>();
+		params.add(new BasicNameValuePair("bbox", bbox));
+		params.add(new BasicNameValuePair("width", width));
+		params.add(new BasicNameValuePair("height", height));
+		params.add(new BasicNameValuePair("srs", srs));
+
+		byte[] result = getRequest(uri, params);
+		return result;
 	}
 }
