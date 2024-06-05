@@ -75,6 +75,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
 		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
 		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
+		String scheme=PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
 
 		try {
 
@@ -82,7 +83,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 			// "https://staging.communityconservedareas.org/naksha-api/api/layer/all?limit=10&offset=0";
 
 			URIBuilder builder = new URIBuilder();
-			builder.setScheme("https").setHost(host).setPath(uri);
+			builder.setScheme(scheme).setHost(host).setPath(uri);
 
 			if (params != null)
 				builder.setParameters(params);
