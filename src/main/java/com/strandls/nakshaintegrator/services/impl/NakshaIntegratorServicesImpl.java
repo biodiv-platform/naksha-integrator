@@ -128,11 +128,12 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
 		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
 		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
+		String scheme=PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
 
 		try {
 
 			URIBuilder builder = new URIBuilder();
-			builder.setScheme("https").setHost(host).setPath(uri);
+			builder.setScheme(scheme).setHost(host).setPath(uri);
 			if (params != null)
 				builder.setParameters(params);
 
