@@ -118,4 +118,17 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 		byte[] result = getRequest(uri, params);
 		return result;
 	}
+
+	public byte[] getPng(String bbox, String width, String height, String srs, String layers) {
+		String uri = "/naksha-api/api/geoserver/wms";
+		ArrayList<NameValuePair> params = new ArrayList<>();
+		params.add(new BasicNameValuePair("bbox", bbox));
+		params.add(new BasicNameValuePair("width", width));
+		params.add(new BasicNameValuePair("height", height));
+		params.add(new BasicNameValuePair("srs", srs));
+		params.add(new BasicNameValuePair("layers", layers));
+
+		byte[] result = getRequest(uri, params);
+		return result;
+	}
 }

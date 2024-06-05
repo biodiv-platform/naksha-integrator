@@ -1,6 +1,7 @@
 package com.strandls.nakshaintegrator.controllers;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -15,7 +16,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.strandls.nakshaintegrator.services.GeoserverIntegratorServices;
-import com.strandls.nakshaintegrator.services.impl.GeoserverIntegratorServicesImpl;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -71,6 +71,27 @@ public class GeoserverIntegratorController {
 			@DefaultValue("EPSG:4326") @QueryParam("srs") String srs) {
 		try {
 			byte[] file = geo.getThumbnails(id, wspace, para, width, height, srs);
+			if (file.length > 0) {
+				return Response.ok(new ByteArrayInputStream(file)).build();
+			} else {
+				return Response.status(Response.Status.BAD_REQUEST).entity("Tiles not found").build();
+			}
+		} catch (Exception e) {
+			return Response.status(Status.BAD_REQUEST).build();
+		}
+
+	}
+
+	@GET
+	@Path("/wms")
+	@Produces("image/png")
+	@ApiOperation(value = "Fetch Raster", notes = "Return Raster", response = ByteArrayInputStream.class)
+	@ApiResponses(value = { @ApiResponse(code = 400, message = "Raster not found", response = String.class) })
+	public Response fetchRaster(@QueryParam("bbox") String para, @DefaultValue("200") @QueryParam("width") String width,
+			@DefaultValue("200") @QueryParam("height") String height,
+			@DefaultValue("EPSG:3857") @QueryParam("srs") String srs, @QueryParam("layers") String layers) {
+		try {
+			byte[] file = geo.getPng(para, width, height, srs, layers);
 			if (file.length > 0) {
 				return Response.ok(new ByteArrayInputStream(file)).build();
 			} else {
