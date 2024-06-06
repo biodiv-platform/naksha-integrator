@@ -51,9 +51,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.strandls.authentication_utility.util.AuthUtil;
 import com.strandls.authentication_utility.util.PropertyFileUtil;
+import com.strandls.nakshaintegrator.Headers;
+import com.strandls.nakshaintegrator.services.MailService;
 import com.strandls.nakshaintegrator.services.NakshaIntegratorServices;
 import com.strandls.nakshaintegrator.util.Utils;
+import com.strandls.user.ApiException;
 import com.strandls.user.controller.UserServiceApi;
+import com.strandls.user.pojo.DownloadLogData;
 import com.strandls.user.pojo.User;
 import com.strandls.user.pojo.UserIbp;
 
@@ -63,6 +67,12 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 	@Inject
 	private UserServiceApi userServiceApi;
+
+	@Inject
+	private MailService mailService;
+
+	@Inject
+	private Headers headers;
 
 	private final Logger logger = LoggerFactory.getLogger(NakshaIntegratorServicesImpl.class);
 
@@ -409,7 +419,22 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 			});
 
 			String filePath = (String) result.get("filePath");
-			String url = "/naksha-integrator-api/api/v1/services/download" + filePath;
+			String url = "/naksha-integrator-api/api/layer/download" + filePath;
+
+			mailService.sendMail(profile.getId(), url, "naksha");
+			userServiceApi = headers.addUserHeaders(userServiceApi, request.getHeader(HttpHeaders.AUTHORIZATION));
+			DownloadLogData data = new DownloadLogData();
+			data.setFilePath(url);
+			data.setFileType(layerMetaData.get("layerType").toString() == "RASTER" ? "RASTER" : "SHP");
+			data.setFilterUrl(url);
+			data.setStatus("success");
+			data.setSourcetype("Map");
+			data.setNotes(layerDownload.get("layerTitle").toString());
+			try {
+				userServiceApi.logDocumentDownload(data);
+			} catch (Exception e) {
+				logger.error(e.getMessage());
+			}
 
 			result.put("url", url);
 		} catch (IOException e) {
