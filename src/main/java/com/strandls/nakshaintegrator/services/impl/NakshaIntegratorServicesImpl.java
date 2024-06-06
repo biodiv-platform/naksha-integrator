@@ -75,7 +75,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
 		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
 		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
-		String scheme=PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
+		String scheme = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
 
 		try {
 
@@ -128,7 +128,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
 		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
 		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
-		String scheme=PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
+		String scheme = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
 
 		try {
 
@@ -207,7 +207,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
 		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
 		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
-		String scheme=PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
+		String scheme = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
 		try {
 
 			// String url =
@@ -287,7 +287,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 				UserIbp userIbp = userServiceApi.getUserIbp(authorId + "");
 				metaLayer.put("author", userIbp);
 
-				// Boolean isDownloadable = checkDownLoadAccess(userProfile, metaLayer);
+				Boolean isDownloadable = checkDownLoadAccess(userProfile, metaLayer);
+				metaLayer.put("isDownloadable", isDownloadable);
 
 				layerLists.add(metaLayer);
 			}
