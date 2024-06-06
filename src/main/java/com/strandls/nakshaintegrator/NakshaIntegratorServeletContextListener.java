@@ -30,7 +30,7 @@ import com.google.inject.servlet.GuiceServletContextListener;
 import com.google.inject.servlet.ServletModule;
 import com.strandls.nakshaintegrator.controllers.NakshaIntegratorControllerModule;
 import com.strandls.nakshaintegrator.dao.NakshaIntegratorDaoModule;
-import com.strandls.nakshaintegrator.services.impl.NakshaIntegratorServiceModule;
+import com.strandls.nakshaintegrator.services.NakshaIntegratorServiceModule;
 import com.strandls.user.controller.UserServiceApi;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.PrecisionModel;
