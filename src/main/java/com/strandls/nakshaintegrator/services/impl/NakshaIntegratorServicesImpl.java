@@ -292,10 +292,10 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 						|| (showOnlyPending && !"Pending".equals(metaLayer.get("layerStatus"))))
 					continue;
 
-				String authorId = metaLayer.get("uploaderUserId").toString();
-
-				UserIbp userIbp = userServiceApi.getUserIbp(authorId + "");
-				metaLayer.put("author", userIbp);
+//				String authorId = metaLayer.get("uploaderUserId").toString();
+//
+//				UserIbp userIbp = userServiceApi.getUserIbp(authorId + "");
+//				metaLayer.put("author", userIbp);
 
 				Boolean isDownloadable = checkDownLoadAccess(userProfile, metaLayer);
 				metaLayer.put("isDownloadable", isDownloadable);
