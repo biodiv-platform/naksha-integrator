@@ -1,9 +1,7 @@
 package com.strandls.nakshaintegrator.services.impl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -73,27 +71,6 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 
 			byteArrayResponse = EntityUtils.toByteArray(entity);
 			EntityUtils.consume(entity);
-			
-			// Get all headers
-	        Map<String, String> headers = new HashMap<>();
-	        for (org.apache.http.Header header : response.getAllHeaders()) {
-	            headers.put(header.getName(), header.getValue());
-	        }
-
-	        // Convert headers to a single string
-	        StringBuilder headerStringBuilder = new StringBuilder();
-	        for (Map.Entry<String, String> entry : headers.entrySet()) {
-	            headerStringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-	        }
-	        String headerString = headerStringBuilder.toString();
-
-	        // Combine headers and body into one byte array
-	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-	        outputStream.write(headerString.getBytes(StandardCharsets.UTF_8));
-	        outputStream.write("\n\n".getBytes(StandardCharsets.UTF_8)); // Separator between headers and body
-	        outputStream.write(byteArrayResponse);
-
-	        byteArrayResponse = outputStream.toByteArray();
 
 		} catch (Exception e) {
 			logger.error(e.getMessage());
