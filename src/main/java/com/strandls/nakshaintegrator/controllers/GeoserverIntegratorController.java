@@ -2,6 +2,7 @@ package com.strandls.nakshaintegrator.controllers;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -15,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.strandls.nakshaintegrator.pojo.GeoServerResponse;
 import com.strandls.nakshaintegrator.services.GeoserverIntegratorServices;
 
 import io.swagger.annotations.Api;
@@ -46,17 +48,20 @@ public class GeoserverIntegratorController {
 
 	@GET
 	@Path("/gwc/service/tms/1.0.0/{layer}/{z}/{x}/{y}")
-	@Produces("application/x-protobuf")
+	@Produces("application/vnd.mapbox-vector-tile")
 	@ApiOperation(value = "Fetch Tiles", notes = "Return Tiles", response = ByteArrayInputStream.class)
 	@ApiResponses(value = { @ApiResponse(code = 400, message = "Tiles not found", response = String.class) })
 	public Response fetchTiles(@PathParam("layer") String layer, @PathParam("z") String z, @PathParam("x") String x,
 			@PathParam("y") String y) {
-		byte[] file = geo.getTyles(layer, z, y, x);
-		if (file.length > 0) {
-			return Response.ok(new ByteArrayInputStream(file)).build();
-		} else {
-			return Response.status(Response.Status.BAD_REQUEST).entity("Tiles not found").build();
+		GeoServerResponse geoServerResponse = geo.getTyles(layer, z, y, x);
+		Response.ResponseBuilder responseBuilder = Response.ok(new ByteArrayInputStream(geoServerResponse.getBody()));
+		// Add headers to response
+		for (Map.Entry<String, String> entry : geoServerResponse.getHeaders().entrySet()) {
+			responseBuilder.header(entry.getKey(), entry.getValue());
 		}
+
+		return responseBuilder.build();
+
 	}
 
 	@GET

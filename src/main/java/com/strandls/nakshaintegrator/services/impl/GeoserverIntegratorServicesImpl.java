@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.strandls.authentication_utility.util.PropertyFileUtil;
+import com.strandls.nakshaintegrator.pojo.GeoServerResponse;
 import com.strandls.nakshaintegrator.services.GeoserverIntegratorServices;
 import com.strandls.nakshaintegrator.services.impl.NakshaIntegratorServicesImpl;
 import com.strandls.user.controller.UserServiceApi;
@@ -89,6 +91,67 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 		return byteArrayResponse != null ? byteArrayResponse : new byte[0];
 	}
 
+	private GeoServerResponse getRequestForTiles(String uri, List<NameValuePair> params) {
+
+		CloseableHttpResponse response = null;
+		CloseableHttpClient httpclient = null;
+		byte[] byteArrayResponse = null;
+
+		Map<String, String> responseHeaders = new HashMap<>();
+
+		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
+		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
+		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
+		String scheme = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
+
+		try {
+
+			// String url =
+			// "https://staging.communityconservedareas.org/naksha-api/api/layer/all?limit=10&offset=0";
+
+			URIBuilder builder = new URIBuilder();
+			builder.setScheme(scheme).setHost(host).setPath(uri);
+
+			if (params != null)
+				builder.setParameters(params);
+			URI Uri = null;
+			Uri = builder.build();
+			HttpGet request = new HttpGet(Uri);
+
+			request.setHeader("Portal-Id", portalId);
+			request.setHeader("api-key", apikey);
+
+			httpclient = HttpClients.createDefault();
+
+			response = httpclient.execute(request);
+
+			// Collect headers
+			for (Header header : response.getAllHeaders()) {
+				responseHeaders.put(header.getName(), header.getValue());
+			}
+
+			HttpEntity entity = response.getEntity();
+
+			byteArrayResponse = EntityUtils.toByteArray(entity);
+			EntityUtils.consume(entity);
+
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			logger.error("Error while trying to send request at URL {}");
+		} finally {
+			if (byteArrayResponse != null)
+				HttpClientUtils.closeQuietly(response);
+			try {
+				if (httpclient != null)
+					httpclient.close();
+			} catch (IOException e) {
+				logger.error(e.getMessage());
+			}
+		}
+
+		return new GeoServerResponse(byteArrayResponse != null ? byteArrayResponse : new byte[0], responseHeaders);
+	}
+
 	@Override
 	public String getStyles(String workspace, String id) {
 		String uri = "/naksha-api/api/geoserver/workspaces/" + workspace + "/styles/" + id;
@@ -98,12 +161,11 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 	}
 
 	@Override
-	public byte[] getTyles(String layer, String z, String y, String x) {
+	public GeoServerResponse getTyles(String layer, String z, String y, String x) {
 		String uri = "/naksha-api/api/geoserver/gwc/service/tms/1.0.0/" + layer + "@EPSG%3A900913@pbf/" + z + "/" + x
 				+ "/" + y + ".pbf";
-		byte[] ans = getRequest(uri, null);
-		// String result = new String(ans);
-		return ans;
+		return getRequestForTiles(uri, null);
+
 	}
 
 	@Override
