@@ -31,4 +31,6 @@ public interface NakshaIntegratorServices {
 
 	public Map<String, Object> prepareDownloadLayer(HttpServletRequest request, Map<String, Object> layerDownload);
 
+	public Map<String, Object> getLocationInfo(String lat, String lon);
+
 }
