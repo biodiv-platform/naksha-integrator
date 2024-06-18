@@ -202,4 +202,19 @@ public class NakshaIntegratorController {
 		}
 	}
 
+	@GET
+	@Path("/locationInfo")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiOperation(value = "Get state,district and tahsil for lat lon", response = Map.class)
+	public Response fetchLocationInfo(@QueryParam("lat") String lat, @QueryParam("lon") String lon) {
+		try {
+			Map<String, Object> result = nakshaIntegratorServices.getLocationInfo(lat, lon);
+			return Response.ok().entity(result).build();
+		} catch (Exception e) {
+			throw new WebApplicationException(
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+		}
+	}
+
 }

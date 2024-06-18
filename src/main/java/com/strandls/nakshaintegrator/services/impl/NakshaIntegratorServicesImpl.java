@@ -480,4 +480,25 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 	}
 
+	@Override
+	public Map<String, Object> getLocationInfo(String lat, String lon) {
+		String uri = "/naksha-api/api/layer/locationInfo";
+
+		ArrayList<NameValuePair> params = new ArrayList<>();
+		params.add(new BasicNameValuePair("lat", lat));
+		params.add(new BasicNameValuePair("lon", lon));
+
+		Map<String, Object> result = null;
+		byte[] ans = getRequest(uri, params);
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			result = mapper.readValue(ans, new TypeReference<HashMap<String, Object>>() {
+			});
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		}
+		return result;
+
+	}
+
 }
