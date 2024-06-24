@@ -35,7 +35,7 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 	@Inject
 	private UserServiceApi userServiceApi;
 
-	private final Logger logger = LoggerFactory.getLogger(NakshaIntegratorServicesImpl.class);
+	private final Logger logger = LoggerFactory.getLogger(GeoserverIntegratorServicesImpl.class);
 
 	private byte[] getRequest(String uri, List<NameValuePair> params) {
 
@@ -127,7 +127,10 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 
 			// Collect headers
 			for (Header header : response.getAllHeaders()) {
-				responseHeaders.put(header.getName(), header.getValue());
+				// System.out.println("key=" + header.getName());
+				if (!header.getName().equals("Keep-Alive") && !header.getName().equals("Connection")) {
+					responseHeaders.put(header.getName(), header.getValue());
+				}
 			}
 
 			HttpEntity entity = response.getEntity();
@@ -137,7 +140,7 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 
 		} catch (Exception e) {
 			logger.error(e.getMessage());
-			logger.error("Error while trying to send request at URL {}");
+			logger.error("Error while trying to send request at URL {}", uri);
 		} finally {
 			if (byteArrayResponse != null)
 				HttpClientUtils.closeQuietly(response);
@@ -162,10 +165,8 @@ public class GeoserverIntegratorServicesImpl implements GeoserverIntegratorServi
 
 	@Override
 	public GeoServerResponse getTyles(String layer, String z, String y, String x) {
-		String uri = "/naksha-api/api/geoserver/gwc/service/tms/1.0.0/" + layer + "@EPSG%3A900913@pbf/" + z + "/" + x
-				+ "/" + y + ".pbf";
+		String uri = "/naksha-api/api/geoserver/gwc/service/tms/1.0.0/" + layer + "/" + z + "/" + x + "/" + y;
 		return getRequestForTiles(uri, null);
-
 	}
 
 	@Override
