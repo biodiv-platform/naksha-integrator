@@ -459,7 +459,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 //		 download access is the property of the portal, hence return true irrespective
 //		 of portal
 //		 if it is All
-		if (metaLayer.get("downloadAccess").equals("All")) {
+		if (metaLayer.get("downloadAccess").equals("ALL")) {
 			return true;
 		} else {
 			String uploaderPortalId = (String) metaLayer.get("portalId");
