@@ -462,13 +462,13 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		if (metaLayer.get("downloadAccess").equals("ALL")) {
 			return true;
 		} else {
-			String uploaderPortalId = (String) metaLayer.get("portalId");
+			String uploaderPortalId = metaLayer.get("portalId").toString();
 			String loggedinUserPortalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
 
 			if (!uploaderPortalId.equals(loggedinUserPortalId)) {
 				return false;
 			} else {
-				String uploaderId = (String) metaLayer.get("uploaderUserId");
+				String uploaderId = metaLayer.get("uploaderUserId").toString();
 				String loggedInUserId = profile.getId();
 				if (uploaderId.equals(loggedInUserId)) {
 					return true;
