@@ -399,8 +399,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		try {
 			layerMetaData = mapper.readValue(metaData, new TypeReference<HashMap<String, Object>>() {
 			});
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			logger.error(e.getMessage());
 		}
 
 		CommonProfile profile = AuthUtil.getProfileFromRequest(request);
@@ -437,8 +437,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 			}
 
 			result.put("url", url);
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			logger.error(e.getMessage());
 		}
 		return result;
 
