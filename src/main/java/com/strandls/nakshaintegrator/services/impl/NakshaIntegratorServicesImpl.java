@@ -399,8 +399,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		try {
 			layerMetaData = mapper.readValue(metaData, new TypeReference<HashMap<String, Object>>() {
 			});
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			logger.error(e.getMessage());
 		}
 
 		CommonProfile profile = AuthUtil.getProfileFromRequest(request);
@@ -437,8 +437,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 			}
 
 			result.put("url", url);
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			logger.error(e.getMessage());
 		}
 		return result;
 
@@ -459,16 +459,16 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 //		 download access is the property of the portal, hence return true irrespective
 //		 of portal
 //		 if it is All
-		if (metaLayer.get("downloadAccess").equals("ALL")) {
+		if (metaLayer.get("downloadAccess").toString().equalsIgnoreCase("ALL")) {
 			return true;
 		} else {
-			String uploaderPortalId = (String) metaLayer.get("portalId");
+			String uploaderPortalId = metaLayer.get("portalId").toString();
 			String loggedinUserPortalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
 
 			if (!uploaderPortalId.equals(loggedinUserPortalId)) {
 				return false;
 			} else {
-				String uploaderId = (String) metaLayer.get("uploaderUserId");
+				String uploaderId = metaLayer.get("uploaderUserId").toString();
 				String loggedInUserId = profile.getId();
 				if (uploaderId.equals(loggedInUserId)) {
 					return true;
