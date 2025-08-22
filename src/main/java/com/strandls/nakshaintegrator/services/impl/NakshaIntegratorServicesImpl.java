@@ -419,7 +419,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 			});
 
 			String filePath = (String) result.get("filePath");
-			String url = "/naksha-integrator-api/api/layer/download" + filePath;
+			String url = "/nakshaIntegrator-api/api/layer/download" + filePath;
 
 			mailService.sendMail(profile.getId(), url, "naksha");
 			userServiceApi = headers.addUserHeaders(userServiceApi, request.getHeader(HttpHeaders.AUTHORIZATION));
