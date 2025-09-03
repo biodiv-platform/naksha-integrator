@@ -6,7 +6,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.strandls.biodiv</groupId>
-	<artifactId>naksha-integrator-api</artifactId>
+	<artifactId>nakshaIntegrator-api</artifactId>
 	<version>1.0.0</version>
 	<packaging>war</packaging>
 
@@ -24,9 +24,9 @@
 		<openapi-generator-cli.version>4.0.3</openapi-generator-cli.version>
 
 		<!-- Project property -->
-		<war-name>naksha-integrator-api</war-name>
+		<war-name>nakshaIntegrator-api</war-name>
 		<srcDir>src/main/webapp</srcDir>
-		<base-path>/naksha-integrator-api/api</base-path>
+		<base-path>/nakshaIntegrator-api/api</base-path>
 		<location>com.strandls.nakshaintegrator</location>
 
 		<!-- Sonar Cloud -->
@@ -290,7 +290,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>naksha-integrator-api</finalName>
+		<finalName>nakshaIntegrator-api</finalName>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
