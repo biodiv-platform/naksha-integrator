@@ -3,26 +3,26 @@ package com.strandls.nakshaintegrator.controllers;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 
-import javax.inject.Inject;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import com.strandls.nakshaintegrator.services.GeoserverIntegratorServices;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api("Geoserver Intergrator Services")
+@Tag(name = "Geoserver Integrator Services")
 @Path("/geoserver")
 public class GeoserverIntegratorController {
 
@@ -32,8 +32,8 @@ public class GeoserverIntegratorController {
 	@GET
 	@Path("/workspaces/{workspaces}" + "/styles" + "/{id}")
 	@Produces(MediaType.APPLICATION_JSON)
-	@ApiOperation(value = "Fetch Styles", notes = "Retruns Styles", response = String.class)
-	@ApiResponses(value = { @ApiResponse(code = 400, message = "Styles not found", response = String.class) })
+	@Operation(summary = "Fetch Styles", description = "Returns Styles")
+	@ApiResponses(value = { @ApiResponse(responseCode = "400", description = "Styles not found") })
 	public Response fetchStyle(@PathParam("workspaces") String workspaces, @PathParam("id") String id) {
 		try {
 			String style = geo.getStyles(workspaces, id);
@@ -47,8 +47,8 @@ public class GeoserverIntegratorController {
 	@GET
 	@Path("/gwc/service/tms/1.0.0/{layer}/{z}/{x}/{y}")
 	@Produces("application/x-protobuf")
-	@ApiOperation(value = "Fetch Tiles", notes = "Return Tiles", response = ByteArrayInputStream.class)
-	@ApiResponses(value = { @ApiResponse(code = 400, message = "Tiles not found", response = String.class) })
+	@Operation(summary = "Fetch Tiles", description = "Return Tiles")
+	@ApiResponses(value = { @ApiResponse(responseCode = "400", description = "Tiles not found") })
 	public Response fetchTiles(@PathParam("layer") String layer, @PathParam("z") String z, @PathParam("x") String x,
 			@PathParam("y") String y) {
 		byte[] file = geo.getTyles(layer, z, y, x);
@@ -62,8 +62,8 @@ public class GeoserverIntegratorController {
 	@GET
 	@Path("/thumbnails" + "/{workspace}/{id}")
 	@Produces("image/gif")
-	@ApiOperation(value = "Fetch Thumbnails", notes = "Return Thumbnails", response = ByteArrayInputStream.class)
-	@ApiResponses(value = { @ApiResponse(code = 400, message = "Thumbnail not found", response = String.class) })
+	@Operation(summary = "Fetch Thumbnails", description = "Return Thumbnails")
+	@ApiResponses(value = { @ApiResponse(responseCode = "400", description = "Thumbnail not found") })
 	public Response fetchThumbnail(@PathParam("id") String id,
 			@DefaultValue("biodiv") @PathParam("workspace") String wspace, @QueryParam("bbox") String para,
 			@DefaultValue("200") @QueryParam("width") String width,
@@ -85,8 +85,8 @@ public class GeoserverIntegratorController {
 	@GET
 	@Path("/wms")
 	@Produces("image/png")
-	@ApiOperation(value = "Fetch Raster", notes = "Return Raster", response = ByteArrayInputStream.class)
-	@ApiResponses(value = { @ApiResponse(code = 400, message = "Raster not found", response = String.class) })
+	@Operation(summary = "Fetch Raster", description = "Return Raster")
+	@ApiResponses(value = { @ApiResponse(responseCode = "400", description = "Raster not found") })
 	public Response fetchRaster(@QueryParam("bbox") String para, @DefaultValue("200") @QueryParam("width") String width,
 			@DefaultValue("200") @QueryParam("height") String height,
 			@DefaultValue("EPSG:3857") @QueryParam("srs") String srs, @QueryParam("layers") String layers) {

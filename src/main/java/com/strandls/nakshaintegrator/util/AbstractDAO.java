@@ -4,11 +4,10 @@ import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
-import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.criterion.CriteriaSpecification;
+import org.hibernate.query.Query;
 
 public abstract class AbstractDAO<T, K extends Serializable> {
 
@@ -75,21 +74,22 @@ public abstract class AbstractDAO<T, K extends Serializable> {
 
 	public abstract T findById(K id);
 
-	@SuppressWarnings({ "unchecked", "deprecation" })
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public List<T> findAll() {
 		Session session = sessionFactory.openSession();
-		Criteria criteria = session.createCriteria(daoType);
-		List<T> entities = criteria.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY).list();
+		Query query = session.createQuery("FROM " + daoType.getName());
+		List<T> entities = query.getResultList();
 		session.close();
 		return entities;
 	}
 
-	@SuppressWarnings({ "unchecked", "deprecation" })
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public List<T> findAll(int limit, int offset) {
 		Session session = sessionFactory.openSession();
-		Criteria criteria = session.createCriteria(daoType)
-				.setResultTransformer(CriteriaSpecification.DISTINCT_ROOT_ENTITY);
-		List<T> entities = criteria.setFirstResult(offset).setMaxResults(limit).list();
+		Query query = session.createQuery("FROM " + daoType.getName());
+		query.setFirstResult(offset);
+		query.setMaxResults(limit);
+		List<T> entities = query.getResultList();
 		session.close();
 		return entities;
 	}

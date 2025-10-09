@@ -13,23 +13,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.Response.Status;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.core.Response.Status;
 
 //import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -40,13 +40,15 @@ import com.strandls.nakshaintegrator.services.NakshaIntegratorServices;
 import com.strandls.nakshaintegrator.util.Utils;
 import com.strandls.authentication_utility.filter.ValidateUser;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Api("Naksha Intergrator Services")
+@Tag(name = "Naksha Integrator Services")
 @Path("/layer")
 public class NakshaIntegratorController {
 
@@ -54,7 +56,7 @@ public class NakshaIntegratorController {
 	private NakshaIntegratorServices nakshaIntegratorServices;
 
 	@GET
-	@ApiOperation(value = "Dummy API Ping", notes = "Checks validity of war file at deployment", response = String.class)
+	@Operation(summary = "Dummy API Ping", description = "Checks validity of war file at deployment")
 	@Path(ApiConstants.PING)
 	@Produces(MediaType.TEXT_PLAIN)
 	public String ping() {
@@ -64,7 +66,7 @@ public class NakshaIntegratorController {
 	@Path("all")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	@ApiOperation(value = "Get meta data of all the layers", response = Object.class, responseContainer = "List")
+	@Operation(summary = "Get meta data of all the layers")
 	public Response findAll(@Context HttpServletRequest request, @DefaultValue("-1") @QueryParam("limit") Integer limit,
 			@DefaultValue("-1") @QueryParam("offset") Integer offset,
 			@DefaultValue("false") @QueryParam("showOnlyPending") Boolean showOnlyPending) {
@@ -82,9 +84,9 @@ public class NakshaIntegratorController {
 	@POST
 	@Consumes({ MediaType.MULTIPART_FORM_DATA })
 	@Produces(MediaType.APPLICATION_JSON)
-	@ApiOperation(value = "Upload Layer", notes = "Returns succuess failure", response = Map.class)
-	@ApiResponses(value = { @ApiResponse(code = 400, message = "file not present", response = String.class),
-			@ApiResponse(code = 500, message = "ERROR", response = String.class) })
+	@Operation(summary = "Upload Layer", description = "Returns success or failure")
+	@ApiResponses(value = { @ApiResponse(responseCode = "400", description = "file not present"),
+			@ApiResponse(responseCode = "500", description = "ERROR") })
 	// @ValidateUser
 	public Response upload(@Context HttpServletRequest request, final FormDataMultiPart multiPart) {
 		try {
@@ -100,7 +102,7 @@ public class NakshaIntegratorController {
 	@Path("onClick/{layer}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	@ApiOperation(value = "Get layer information for the layer on click", response = Map.class, responseContainer = "List")
+	@Operation(summary = "Get layer information for the layer on click")
 	public Response getLayerInfoOnClick(@PathParam("layer") String layer) {
 		try {
 			Map<String, Object> onClickLayerInfo = nakshaIntegratorServices.getLayerInfo(layer);
@@ -114,7 +116,7 @@ public class NakshaIntegratorController {
 	@Path("pending/{layer}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
-	@ApiOperation(value = "Make the layer pending", response = Map.class)
+	@Operation(summary = "Make the layer pending")
 	@ValidateUser
 	public Response makeLayerPending(@Context HttpServletRequest request, @PathParam("layer") String layer) {
 		try {
@@ -133,7 +135,7 @@ public class NakshaIntegratorController {
 	@Path("active/{layer}")
 	@PUT
 	@Produces(MediaType.APPLICATION_JSON)
-	@ApiOperation(value = "Make the layer pending", response = Map.class)
+	@Operation(summary = "Make the layer active")
 	@ValidateUser
 	public Response makeLayerActive(@Context HttpServletRequest request, @PathParam("layer") String layer) {
 		try {
@@ -153,7 +155,7 @@ public class NakshaIntegratorController {
 	@GET
 	@Consumes(MediaType.TEXT_PLAIN)
 	@Produces("application/zip")
-	@ApiOperation(value = "Download the shp file", notes = "Return the shp file", response = StreamingOutput.class)
+	@Operation(summary = "Download the shp file", description = "Return the shp file")
 	public Response download(@PathParam("hashKey") String hashKey, @PathParam("layerName") String layerName) {
 
 		byte[] fileData = nakshaIntegratorServices.downloadShpFile(hashKey, layerName);
@@ -188,10 +190,10 @@ public class NakshaIntegratorController {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@ApiOperation(value = "prepate shape file", notes = "Return the shape file location", response = Map.class)
+	@Operation(summary = "Prepare shape file", description = "Return the shape file location")
 	@ValidateUser
 	public Response prepareDownload(@Context HttpServletRequest request,
-			@ApiParam("layerDownload") Map<String, Object> layerDownload) {
+			@Parameter(description = "layerDownload") Map<String, Object> layerDownload) {
 		try {
 			Map<String, Object> retValue = nakshaIntegratorServices.prepareDownloadLayer(request, layerDownload);
 			return Response.ok().entity(retValue).build();
@@ -206,7 +208,7 @@ public class NakshaIntegratorController {
 	@Path("/locationInfo")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@ApiOperation(value = "Get state,district and tahsil for lat lon", response = Map.class)
+	@Operation(summary = "Get state, district and tahsil for lat lon")
 	public Response fetchLocationInfo(@QueryParam("lat") String lat, @QueryParam("lon") String lon) {
 		try {
 			Map<String, Object> result = nakshaIntegratorServices.getLocationInfo(lat, lon);

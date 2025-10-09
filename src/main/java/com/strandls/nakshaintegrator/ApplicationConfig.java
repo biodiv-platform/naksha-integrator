@@ -1,12 +1,10 @@
 /**
- * 
+ *
  */
 package com.strandls.nakshaintegrator;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -16,14 +14,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.Application;
-
 import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerLifecycleListener;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -34,44 +28,31 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Injector;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiModel;
-import io.swagger.jaxrs.config.BeanConfig;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.servers.Server;
+import jakarta.ws.rs.core.Application;
 
+@OpenAPIDefinition(info = @Info(title = "Naksha Integrator MicroServices", version = "1.0.0", description = "API for Naksha Integrator"), servers = {
+		@Server(url = "http://localhost:8080/nakshaIntegrator-api/api") })
 public class ApplicationConfig extends Application {
 
 	private static final Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
 
 	/**
-	 * 
+	 *
 	 */
 	public ApplicationConfig() {
-		InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties");
-
-		Properties properties = new Properties();
-		try {
-			properties.load(in);
-		} catch (IOException e) {
-			logger.error(e.getMessage());
-		}
-
-		BeanConfig beanConfig = new BeanConfig();
-		beanConfig.setVersion(properties.getProperty("version"));
-		beanConfig.setTitle(properties.getProperty("title"));
-		beanConfig.setSchemes(properties.getProperty("schemes").split(","));
-		beanConfig.setHost(properties.getProperty("host"));
-		beanConfig.setBasePath(properties.getProperty("basePath"));
-		beanConfig.setResourcePackage(properties.getProperty("resourcePackage"));
-		beanConfig.setPrettyPrint(new Boolean(properties.getProperty("prettyPrint")));
-		beanConfig.setScan(new Boolean(properties.getProperty("scan")));
+		logger.info("Initializing ApplicationConfig...");
 	}
 
 	@Override
 	public Set<Object> getSingletons() {
-
 		Set<Object> singletons = new HashSet<>();
-		singletons.add(new ContainerLifecycleListener() {
 
+		// Lifecycle listener to bridge Guice & HK2
+		singletons.add(new ContainerLifecycleListener() {
 			@Override
 			public void onStartup(Container container) {
 				ServletContainer servletContainer = (ServletContainer) container;
@@ -86,58 +67,17 @@ public class ApplicationConfig extends Application {
 
 			@Override
 			public void onShutdown(Container container) {
-				/**
-				 * 
-				 */
 			}
 
 			@Override
 			public void onReload(Container container) {
-				/**
-				 * 
-				 */
 			}
 		});
 
+		// Add OpenAPI resource
+		singletons.add(new OpenApiResource());
+
 		return singletons;
-	}
-
-	@Override
-	public Set<Class<?>> getClasses() {
-		Set<Class<?>> resource = new HashSet<>();
-
-		try {
-			List<Class<?>> swaggerClass = getSwaggerAnnotationClassesFromPackage("com");
-			resource.addAll(swaggerClass);
-		} catch (ClassNotFoundException | URISyntaxException | IOException e) {
-			logger.error(e.getMessage());
-		}
-
-		resource.add(io.swagger.jaxrs.listing.SwaggerSerializers.class);
-		resource.add(io.swagger.jaxrs.listing.ApiListingResource.class);
-
-		resource.add(MultiPartFeature.class);
-
-		return resource;
-	}
-
-	protected List<Class<?>> getSwaggerAnnotationClassesFromPackage(String packageName)
-			throws URISyntaxException, IOException, ClassNotFoundException {
-
-		List<String> classNames = getClassNamesFromPackage(packageName);
-		List<Class<?>> classes = new ArrayList<>();
-		for (String className : classNames) {
-			Class<?> cls = Class.forName(className);
-			Annotation[] annotations = cls.getAnnotations();
-
-			for (Annotation annotation : annotations) {
-				if (annotation instanceof Api || annotation instanceof ApiModel) {
-					classes.add(cls);
-				}
-			}
-		}
-
-		return classes;
 	}
 
 	public static List<String> getClassNamesFromPackage(final String packageName)

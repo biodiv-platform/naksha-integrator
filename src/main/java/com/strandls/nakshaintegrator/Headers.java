@@ -1,6 +1,6 @@
 package com.strandls.nakshaintegrator;
 
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.HttpHeaders;
 
 import com.strandls.user.controller.UserServiceApi;
 

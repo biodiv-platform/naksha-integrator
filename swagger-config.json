@@ -7,7 +7,7 @@
     "artifactVersion": "1.0.0",
     "fullJavaUtil": true,
     "dateLibrary": "legacy",
-    "library": "jersey2",
+    "library": "jersey3",
     "developerName": "Prakhar Dev Singh",
-    "java8": true
+    "useJakartaEe": true
   }

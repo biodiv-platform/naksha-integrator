@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextEvent;
 
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.hibernate.SessionFactory;
@@ -34,8 +34,8 @@ import com.strandls.nakshaintegrator.controllers.NakshaIntegratorControllerModul
 import com.strandls.nakshaintegrator.dao.NakshaIntegratorDaoModule;
 import com.strandls.nakshaintegrator.services.NakshaIntegratorServiceModule;
 import com.strandls.user.controller.UserServiceApi;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 
 public class NakshaIntegratorServeletContextListener extends GuiceServletContextListener {
 
@@ -60,7 +60,7 @@ public class NakshaIntegratorServeletContextListener extends GuiceServletContext
 
 				configuration = configuration.configure();
 				SessionFactory sessionFactory = configuration.buildSessionFactory();
-				
+
 				RabbitMqConnection rabbitConnetion = new RabbitMqConnection();
 				Channel channel = null;
 				try {
@@ -68,20 +68,18 @@ public class NakshaIntegratorServeletContextListener extends GuiceServletContext
 				} catch (Exception e) {
 					logger.error(e.getMessage());
 				}
-				
-				bind(Channel.class).toInstance(channel); 
-				RabbitMQProducer producer = new RabbitMQProducer(channel);
 
 				GeometryFactory geofactory = new GeometryFactory(new PrecisionModel(), 4326);
 				bind(GeometryFactory.class).toInstance(geofactory);
+				bind(SessionFactory.class).toInstance(sessionFactory);
+				bind(Channel.class).toInstance(channel);
 
 				Map<String, String> props = new HashMap<>();
-				props.put("javax.ws.rs.Application", ApplicationConfig.class.getName());
+				props.put("jakarta.ws.rs.Application", ApplicationConfig.class.getName());
 				props.put("jersey.config.server.provider.packages", "com");
 				props.put("jersey.config.server.wadl.disableWadl", "true");
 
 				bind(UserServiceApi.class).in(Scopes.SINGLETON);
-				bind(SessionFactory.class).toInstance(sessionFactory);
 				bind(ServletContainer.class).in(Scopes.SINGLETON);
 
 				serve("/api/*").with(ServletContainer.class, props);
@@ -101,7 +99,7 @@ public class NakshaIntegratorServeletContextListener extends GuiceServletContext
 			Annotation[] annotations = cls.getAnnotations();
 
 			for (Annotation annotation : annotations) {
-				if (annotation instanceof javax.persistence.Entity) {
+				if (annotation instanceof jakarta.persistence.Entity) {
 					classes.add(cls);
 				}
 			}
