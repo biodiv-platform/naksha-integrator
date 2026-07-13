@@ -103,6 +103,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 			request.setHeader("Portal-Id", portalId);
 			request.setHeader("api-key", apikey);
+			request.setHeader("User-Agent",
+					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
 
 			httpclient = HttpClients.createDefault();
 
@@ -151,6 +153,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 			request.setHeader("Portal-Id", portalId);
 			request.setHeader("api-key", apikey);
+			request.setHeader("User-Agent",
+					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
 
 			if (multiPart != null) {
 				MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
@@ -234,6 +238,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 			request.setHeader("Portal-Id", portalId);
 			request.setHeader("api-key", apikey);
+			request.setHeader("User-Agent",
+					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
 
 			httpclient = HttpClients.createDefault();
 
