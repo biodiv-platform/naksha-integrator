@@ -10,7 +10,7 @@ public class TusConfig {
     private final TusFileUploadService tusFileUploadService;
 
     public TusConfig() {
-        String storagePath = PropertyFileUtil.fetchProperty("config.properties", "layerTusUploadPath");
+        String storagePath = PropertyFileUtil.fetchProperty("config.properties", "tus");
         this.tusFileUploadService = new TusFileUploadService()
                 .withStoragePath(storagePath)
                 .withMaxUploadSize(2L * 1024 * 1024 * 1024)

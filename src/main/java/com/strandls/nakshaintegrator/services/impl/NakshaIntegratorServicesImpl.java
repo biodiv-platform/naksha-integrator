@@ -540,7 +540,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 	public Map<String, Object> uploadLayerFromHash(HttpServletRequest request, String hash,
 			Map<String, Object> metadata) throws Exception {
 
-		String basePath = PropertyFileUtil.fetchProperty("config.properties", "layerTusUploadPath");
+		String basePath = PropertyFileUtil.fetchProperty("config.properties", "tus");
 		File dir = new File(basePath + File.separator + hash);
 		File[] files = dir.listFiles();
 		if (files == null || files.length == 0) {

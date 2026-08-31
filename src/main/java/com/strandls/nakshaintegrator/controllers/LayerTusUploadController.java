@@ -150,7 +150,7 @@ public class LayerTusUploadController {
 			String hash = info.getMetadata().get("hash");
 			String fileRole = info.getMetadata().get("fileRole");
 
-			String basePath = PropertyFileUtil.fetchProperty("config.properties", "layerTusUploadPath");
+			String basePath = PropertyFileUtil.fetchProperty("config.properties", "tus");
 			File dir = new File(basePath + File.separator + hash);
 			FileUtils.forceMkdir(dir);
 			File dest = new File(dir, fileRole + "_" + fileName);
