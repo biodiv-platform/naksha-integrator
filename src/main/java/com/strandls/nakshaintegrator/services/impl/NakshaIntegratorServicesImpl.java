@@ -3,24 +3,21 @@
  */
 package com.strandls.nakshaintegrator.services.impl;
 
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -44,9 +41,7 @@ import org.pac4j.core.profile.CommonProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.strandls.authentication_utility.util.AuthUtil;
@@ -55,11 +50,8 @@ import com.strandls.nakshaintegrator.Headers;
 import com.strandls.nakshaintegrator.services.MailService;
 import com.strandls.nakshaintegrator.services.NakshaIntegratorServices;
 import com.strandls.nakshaintegrator.util.Utils;
-import com.strandls.user.ApiException;
 import com.strandls.user.controller.UserServiceApi;
 import com.strandls.user.pojo.DownloadLogData;
-import com.strandls.user.pojo.User;
-import com.strandls.user.pojo.UserIbp;
 
 import net.minidev.json.JSONArray;
 
@@ -499,6 +491,90 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		}
 		return result;
 
+	}
+
+	private byte[] postMultipartEntity(String uri, HttpEntity entity) {
+		CloseableHttpResponse response = null;
+		CloseableHttpClient httpclient = null;
+		byte[] byteArrayResponse = null;
+
+		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
+		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
+		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
+		String scheme = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
+
+		try {
+			URIBuilder builder = new URIBuilder();
+			builder.setScheme(scheme).setHost(host).setPath(uri);
+
+			HttpPost request = new HttpPost(builder.build());
+			request.setHeader("Portal-Id", portalId);
+			request.setHeader("api-key", apikey);
+			request.setEntity(entity);
+
+			httpclient = HttpClients.createDefault();
+			response = httpclient.execute(request);
+			HttpEntity responseEntity = response.getEntity();
+
+			byteArrayResponse = EntityUtils.toByteArray(responseEntity);
+			EntityUtils.consume(responseEntity);
+
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			logger.error("Error while trying to send request at URL {}", uri);
+		} finally {
+			if (byteArrayResponse != null)
+				HttpClientUtils.closeQuietly(response);
+			try {
+				if (httpclient != null)
+					httpclient.close();
+			} catch (IOException e) {
+				logger.error(e.getMessage());
+			}
+		}
+
+		return byteArrayResponse != null ? byteArrayResponse : new byte[0];
+	}
+
+	@Override
+	public Map<String, Object> uploadLayerFromHash(HttpServletRequest request, String hash,
+			Map<String, Object> metadata) throws Exception {
+
+		String basePath = PropertyFileUtil.fetchProperty("config.properties", "layerTusUploadPath");
+		File dir = new File(basePath + File.separator + hash);
+		File[] files = dir.listFiles();
+		if (files == null || files.length == 0) {
+			throw new BadRequestException("No uploaded files found for " + hash + " — they may have expired");
+		}
+
+		CommonProfile userProfile = AuthUtil.getProfileFromRequest(request);
+		String uploaderUserId = userProfile.getId();
+		ObjectMapper mapper = new ObjectMapper();
+		byte[] metadataJson = mapper.writeValueAsBytes(metadata);
+
+		Map<String, Object> result;
+		try {
+			MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+			entityBuilder.setContentType(ContentType.MULTIPART_FORM_DATA);
+			entityBuilder.addBinaryBody("metadata", metadataJson, ContentType.APPLICATION_JSON, "metadata.json");
+			entityBuilder.addTextBody("uploaderUserId", uploaderUserId, ContentType.TEXT_PLAIN);
+
+			for (File f : files) {
+				// filenames are "<fileRole>_<originalName>" — split once, at the first
+				// underscore
+				String[] parts = f.getName().split("_", 2);
+				String fileRole = parts[0];
+				String originalName = parts.length > 1 ? parts[1] : f.getName();
+				entityBuilder.addBinaryBody(fileRole, f, ContentType.APPLICATION_OCTET_STREAM, originalName);
+			}
+
+			byte[] ans = postMultipartEntity("/naksha-api/api/layer/upload", entityBuilder.build());
+			result = mapper.readValue(ans, new TypeReference<Map<String, Object>>() {
+			});
+		} finally {
+			FileUtils.deleteQuietly(dir);
+		}
+		return result;
 	}
 
 }

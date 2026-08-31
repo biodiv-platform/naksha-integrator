@@ -8,12 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.core.Response;
 
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-
-import com.strandls.user.ApiException;
 
 public interface NakshaIntegratorServices {
 	public List<HashMap<String, Object>> getTOCList(HttpServletRequest request, Integer limit, Integer offset,
@@ -32,5 +28,8 @@ public interface NakshaIntegratorServices {
 	public Map<String, Object> prepareDownloadLayer(HttpServletRequest request, Map<String, Object> layerDownload);
 
 	public Map<String, Object> getLocationInfo(String lat, String lon);
+
+	Map<String, Object> uploadLayerFromHash(HttpServletRequest request, String hash, Map<String, Object> metadata)
+			throws Exception;
 
 }
