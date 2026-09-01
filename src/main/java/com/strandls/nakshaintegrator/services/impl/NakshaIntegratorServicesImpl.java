@@ -6,7 +6,9 @@ package com.strandls.nakshaintegrator.services.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +28,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -67,6 +70,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 	private Headers headers;
 
 	private final Logger logger = LoggerFactory.getLogger(NakshaIntegratorServicesImpl.class);
+
+	private static final int NAKSHA_CHUNK_SIZE = 50 * 1024 * 1024;
 
 	private byte[] getRequest(String uri, List<NameValuePair> params) {
 
@@ -536,12 +541,59 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		return byteArrayResponse != null ? byteArrayResponse : new byte[0];
 	}
 
+	private void sendFileInChunks(String scheme, String host, String portalId, String apikey, String hash,
+			String fileRole, File file) throws IOException {
+		long total = file.length();
+		long offset = 0;
+
+		try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+			byte[] buffer = new byte[NAKSHA_CHUNK_SIZE];
+			while (offset < total) {
+				int len = raf.read(buffer);
+				if (len <= 0)
+					break;
+
+				URIBuilder builder = new URIBuilder();
+				URI uri;
+				try {
+					builder.setScheme(scheme).setHost(host)
+							.setPath("/naksha-api/api/layer/upload/chunk/" + hash + "/" + fileRole)
+							.setParameter("filename", file.getName());
+					uri = builder.build();
+				} catch (URISyntaxException e) {
+					throw new IOException(e);
+				}
+
+				HttpPost request = new HttpPost(uri);
+				request.setHeader("Portal-Id", portalId);
+				request.setHeader("api-key", apikey);
+				request.setHeader("Upload-Offset", String.valueOf(offset));
+				request.setEntity(new ByteArrayEntity(buffer, 0, len, ContentType.APPLICATION_OCTET_STREAM));
+
+				try (CloseableHttpClient httpclient = HttpClients.createDefault();
+						CloseableHttpResponse response = httpclient.execute(request)) {
+					int status = response.getStatusLine().getStatusCode();
+					if (status == 409) {
+						String actual = response.getFirstHeader("Upload-Offset").getValue();
+						offset = Long.parseLong(actual);
+						continue;
+					}
+					if (status >= 300) {
+						throw new IOException("Chunk upload failed at offset " + offset + " for " + fileRole
+								+ " (status " + status + ")");
+					}
+				}
+				offset += len;
+			}
+		}
+	}
+
 	@Override
 	public Map<String, Object> uploadLayerFromHash(HttpServletRequest request, String hash,
 			Map<String, Object> metadata) throws Exception {
 
-		String basePath = PropertyFileUtil.fetchProperty("config.properties", "tus");
-		File dir = new File(basePath + File.separator + hash);
+		String basePath = PropertyFileUtil.fetchProperty("config.properties", "layerTusUploadPath");
+		File dir = new File(basePath, hash);
 		File[] files = dir.listFiles();
 		if (files == null || files.length == 0) {
 			throw new BadRequestException("No uploaded files found for " + hash + " — they may have expired");
@@ -549,32 +601,32 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 		CommonProfile userProfile = AuthUtil.getProfileFromRequest(request);
 		String uploaderUserId = userProfile.getId();
-		ObjectMapper mapper = new ObjectMapper();
-		byte[] metadataJson = mapper.writeValueAsBytes(metadata);
 
-		Map<String, Object> result;
+		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
+		String scheme = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiScheme");
+		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
+		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
+
 		try {
-			MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
-			entityBuilder.setContentType(ContentType.MULTIPART_FORM_DATA);
-			entityBuilder.addBinaryBody("metadata", metadataJson, ContentType.APPLICATION_JSON, "metadata.json");
-			entityBuilder.addTextBody("uploaderUserId", uploaderUserId, ContentType.TEXT_PLAIN);
-
 			for (File f : files) {
-				// filenames are "<fileRole>_<originalName>" — split once, at the first
-				// underscore
-				String[] parts = f.getName().split("_", 2);
-				String fileRole = parts[0];
-				String originalName = parts.length > 1 ? parts[1] : f.getName();
-				entityBuilder.addBinaryBody(fileRole, f, ContentType.APPLICATION_OCTET_STREAM, originalName);
+				String fileRole = f.getName().split("_", 2)[0];
+				sendFileInChunks(scheme, host, portalId, apikey, hash, fileRole, f);
 			}
 
-			byte[] ans = postMultipartEntity("/naksha-api/api/layer/upload", entityBuilder.build());
-			result = mapper.readValue(ans, new TypeReference<Map<String, Object>>() {
+			Map<String, Object> payload = new HashMap<>();
+			payload.put("uploaderUserId", uploaderUserId);
+			payload.put("metadata", metadata);
+
+			ObjectMapper mapper = new ObjectMapper();
+			byte[] body = mapper.writeValueAsBytes(payload);
+			byte[] ans = postMultipartEntity("/naksha-api/api/layer/upload/session/" + hash,
+					new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
+
+			return mapper.readValue(ans, new TypeReference<Map<String, Object>>() {
 			});
 		} finally {
 			FileUtils.deleteQuietly(dir);
 		}
-		return result;
 	}
 
 }

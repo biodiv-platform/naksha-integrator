@@ -213,4 +213,24 @@ public class NakshaIntegratorController {
 		}
 	}
 
+	@Path("upload/{hash}")
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ValidateUser
+	@Operation(summary = "Finalize a layer upload from already-landed tus files")
+	public Response uploadFromHash(@Context HttpServletRequest request, @PathParam("hash") String hash,
+			Map<String, Object> metadata) {
+		try {
+			Map<String, Object> result = nakshaIntegratorServices.uploadLayerFromHash(request, hash, metadata);
+			return Response.ok().entity(result).build();
+		} catch (jakarta.ws.rs.BadRequestException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+		} catch (Exception e) {
+			Thread.currentThread().interrupt();
+			throw new WebApplicationException(
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+		}
+	}
+
 }

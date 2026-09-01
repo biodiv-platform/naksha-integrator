@@ -1,36 +1,30 @@
 package com.strandls.nakshaintegrator.util;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.inject.Singleton;
 
+@Singleton
 public class TusResultStore {
 
 	public static class Entry {
 		public volatile boolean complete = false;
-		public volatile List<MyUpload> result;
+		public volatile Object result;
 		public volatile String error;
-		public final long createdAt = System.currentTimeMillis();
 	}
 
-	private final Map<String, Entry> results = new ConcurrentHashMap<>();
+	private final Map<String, Entry> store = new ConcurrentHashMap<>();
 
 	public Entry getOrCreate(String uploadUri) {
-		return results.computeIfAbsent(uploadUri, k -> new Entry());
+		return store.computeIfAbsent(uploadUri, k -> new Entry());
 	}
 
 	public Entry get(String uploadUri) {
-		return results.get(uploadUri);
+		return store.get(uploadUri);
 	}
 
 	public void remove(String uploadUri) {
-		results.remove(uploadUri);
+		store.remove(uploadUri);
 	}
-
-	public void cleanupOlderThan(long maxAgeMs) {
-		long cutoff = System.currentTimeMillis() - maxAgeMs;
-		results.entrySet().removeIf(e -> e.getValue().createdAt < cutoff);
-	}
-
 }
