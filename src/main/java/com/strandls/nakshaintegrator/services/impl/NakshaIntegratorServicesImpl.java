@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.BadRequestException;
@@ -22,6 +24,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -52,6 +55,7 @@ import com.strandls.authentication_utility.util.PropertyFileUtil;
 import com.strandls.nakshaintegrator.Headers;
 import com.strandls.nakshaintegrator.services.MailService;
 import com.strandls.nakshaintegrator.services.NakshaIntegratorServices;
+import com.strandls.nakshaintegrator.util.TusResultStore;
 import com.strandls.nakshaintegrator.util.Utils;
 import com.strandls.user.controller.UserServiceApi;
 import com.strandls.user.pojo.DownloadLogData;
@@ -69,9 +73,21 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 	@Inject
 	private Headers headers;
 
+	@Inject
+	private TusResultStore resultStore;
+
 	private final Logger logger = LoggerFactory.getLogger(NakshaIntegratorServicesImpl.class);
 
 	private static final int NAKSHA_CHUNK_SIZE = 50 * 1024 * 1024;
+
+	private static final String LAYER_UPLOAD_KEY_PREFIX = "layer-upload:";
+
+	private final ExecutorService layerFinalizerPool = Executors.newFixedThreadPool(4);
+
+	private static final CloseableHttpClient RELAY_HTTP_CLIENT = HttpClients.custom()
+			.setDefaultRequestConfig(RequestConfig.custom().setConnectTimeout(10_000).setSocketTimeout(120_000)
+					.setConnectionRequestTimeout(10_000).build())
+			.build();
 
 	private byte[] getRequest(String uri, List<NameValuePair> params) {
 
@@ -289,10 +305,10 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 						|| (showOnlyPending && !"Pending".equals(metaLayer.get("layerStatus"))))
 					continue;
 
-//				String authorId = metaLayer.get("uploaderUserId").toString();
-//
-//				UserIbp userIbp = userServiceApi.getUserIbp(authorId + "");
-//				metaLayer.put("author", userIbp);
+				// String authorId = metaLayer.get("uploaderUserId").toString();
+				//
+				// UserIbp userIbp = userServiceApi.getUserIbp(authorId + "");
+				// metaLayer.put("author", userIbp);
 
 				Boolean isDownloadable = checkDownLoadAccess(userProfile, metaLayer);
 				metaLayer.put("isDownloadable", isDownloadable);
@@ -453,9 +469,9 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		if (metaLayer == null)
 			return false;
 
-//		 download access is the property of the portal, hence return true irrespective
-//		 of portal
-//		 if it is All
+		// download access is the property of the portal, hence return true irrespective
+		// of portal
+		// if it is All
 		if (metaLayer.get("downloadAccess").toString().equalsIgnoreCase("ALL")) {
 			return true;
 		} else {
@@ -570,8 +586,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 				request.setHeader("Upload-Offset", String.valueOf(offset));
 				request.setEntity(new ByteArrayEntity(buffer, 0, len, ContentType.APPLICATION_OCTET_STREAM));
 
-				try (CloseableHttpClient httpclient = HttpClients.createDefault();
-						CloseableHttpResponse response = httpclient.execute(request)) {
+				CloseableHttpResponse response = RELAY_HTTP_CLIENT.execute(request);
+				try {
 					int status = response.getStatusLine().getStatusCode();
 					if (status == 409) {
 						String actual = response.getFirstHeader("Upload-Offset").getValue();
@@ -582,6 +598,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 						throw new IOException("Chunk upload failed at offset " + offset + " for " + fileRole
 								+ " (status " + status + ")");
 					}
+				} finally {
+					HttpClientUtils.closeQuietly(response);
 				}
 				offset += len;
 			}
@@ -589,8 +607,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 	}
 
 	@Override
-	public Map<String, Object> uploadLayerFromHash(HttpServletRequest request, String hash,
-			Map<String, Object> metadata) throws Exception {
+	public void startLayerUploadFromHash(HttpServletRequest request, String hash, Map<String, Object> metadata)
+			throws Exception {
 
 		String basePath = PropertyFileUtil.fetchProperty("config.properties", "layerTusUploadPath");
 		File dir = new File(basePath, hash);
@@ -607,6 +625,18 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		String portalId = PropertyFileUtil.fetchProperty("config.properties", "portalId");
 		String apikey = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiKey");
 
+		String resultKey = LAYER_UPLOAD_KEY_PREFIX + hash;
+		TusResultStore.Entry entry = resultStore.getOrCreate(resultKey);
+		entry.complete = false;
+		entry.result = null;
+		entry.error = null;
+
+		layerFinalizerPool.submit(() -> runLayerUploadJob(hash, metadata, uploaderUserId, host, scheme, portalId,
+				apikey, dir, files, entry));
+	}
+
+	private void runLayerUploadJob(String hash, Map<String, Object> metadata, String uploaderUserId, String host,
+			String scheme, String portalId, String apikey, File dir, File[] files, TusResultStore.Entry entry) {
 		try {
 			for (File f : files) {
 				String fileRole = f.getName().split("_", 2)[0];
@@ -622,11 +652,36 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 			byte[] ans = postMultipartEntity("/naksha-api/api/layer/upload/session/" + hash,
 					new ByteArrayEntity(body, ContentType.APPLICATION_JSON));
 
-			return mapper.readValue(ans, new TypeReference<Map<String, Object>>() {
+			entry.result = mapper.readValue(ans, new TypeReference<Map<String, Object>>() {
 			});
+		} catch (Exception e) {
+			logger.error("layer upload finalize failed for hash {}", hash, e);
+			entry.error = e.getMessage();
 		} finally {
+			entry.complete = true;
 			FileUtils.deleteQuietly(dir);
 		}
+	}
+
+	@Override
+	public Map<String, Object> getLayerUploadResult(String hash) {
+		String resultKey = LAYER_UPLOAD_KEY_PREFIX + hash;
+		TusResultStore.Entry entry = resultStore.get(resultKey);
+		if (entry == null) {
+			return null;
+		}
+
+		Map<String, Object> body = new HashMap<>();
+		body.put("complete", entry.complete);
+		if (entry.complete) {
+			if (entry.error != null) {
+				body.put("error", entry.error);
+			} else {
+				body.put("result", entry.result);
+			}
+			resultStore.remove(resultKey);
+		}
+		return body;
 	}
 
 }

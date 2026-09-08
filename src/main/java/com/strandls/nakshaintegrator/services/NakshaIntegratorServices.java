@@ -29,7 +29,9 @@ public interface NakshaIntegratorServices {
 
 	public Map<String, Object> getLocationInfo(String lat, String lon);
 
-	public Map<String, Object> uploadLayerFromHash(HttpServletRequest request, String hash,
-			Map<String, Object> metadata) throws Exception;
+	public void startLayerUploadFromHash(HttpServletRequest request, String hash, Map<String, Object> metadata)
+			throws Exception;
+
+	public Map<String, Object> getLayerUploadResult(String hash);
 
 }

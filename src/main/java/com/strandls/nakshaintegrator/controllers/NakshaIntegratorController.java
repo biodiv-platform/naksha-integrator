@@ -218,12 +218,14 @@ public class NakshaIntegratorController {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@ValidateUser
-	@Operation(summary = "Finalize a layer upload from already-landed tus files")
+	@Operation(summary = "Kick off finalizing a layer upload from already-landed tus files", description = "Returns immediately once the job is queued; poll upload/{hash}/result for completion. Does not itself proxy file bytes, so it never risks a proxy timeout.")
 	public Response uploadFromHash(@Context HttpServletRequest request, @PathParam("hash") String hash,
 			Map<String, Object> metadata) {
 		try {
-			Map<String, Object> result = nakshaIntegratorServices.uploadLayerFromHash(request, hash, metadata);
-			return Response.ok().entity(result).build();
+			nakshaIntegratorServices.startLayerUploadFromHash(request, hash, metadata);
+			Map<String, Object> accepted = new HashMap<>();
+			accepted.put("resultUrl", request.getRequestURI() + "/result");
+			return Response.status(Response.Status.ACCEPTED).entity(accepted).build();
 		} catch (jakarta.ws.rs.BadRequestException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
 		} catch (Exception e) {
@@ -231,6 +233,19 @@ public class NakshaIntegratorController {
 			throw new WebApplicationException(
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
 		}
+	}
+
+	@GET
+	@Path("upload/{hash}" + ApiConstants.RESULT)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ValidateUser
+	@Operation(summary = "Poll the result of a layer upload finalize job")
+	public Response getLayerUploadResult(@PathParam("hash") String hash) {
+		Map<String, Object> body = nakshaIntegratorServices.getLayerUploadResult(hash);
+		if (body == null) {
+			return Response.status(Response.Status.NOT_FOUND).build();
+		}
+		return Response.ok().entity(body).build();
 	}
 
 }
