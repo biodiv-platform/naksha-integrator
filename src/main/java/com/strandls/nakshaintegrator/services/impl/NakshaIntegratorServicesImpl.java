@@ -595,8 +595,14 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 						continue;
 					}
 					if (status >= 300) {
+						String errorBody;
+						try {
+							errorBody = EntityUtils.toString(response.getEntity());
+						} catch (Exception readEx) {
+							errorBody = "(could not read response body: " + readEx.getMessage() + ")";
+						}
 						throw new IOException("Chunk upload failed at offset " + offset + " for " + fileRole
-								+ " (status " + status + ")");
+								+ " (status " + status + "): " + errorBody);
 					}
 				} finally {
 					HttpClientUtils.closeQuietly(response);
@@ -654,12 +660,12 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 			entry.result = mapper.readValue(ans, new TypeReference<Map<String, Object>>() {
 			});
+			FileUtils.deleteQuietly(dir);
 		} catch (Exception e) {
 			logger.error("layer upload finalize failed for hash {}", hash, e);
 			entry.error = e.getMessage();
 		} finally {
 			entry.complete = true;
-			FileUtils.deleteQuietly(dir);
 		}
 	}
 
