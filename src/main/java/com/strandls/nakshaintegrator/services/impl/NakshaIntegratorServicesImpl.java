@@ -305,10 +305,6 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 						|| (showOnlyPending && !"Pending".equals(metaLayer.get("layerStatus"))))
 					continue;
 
-				// String authorId = metaLayer.get("uploaderUserId").toString();
-				//
-				// UserIbp userIbp = userServiceApi.getUserIbp(authorId + "");
-				// metaLayer.put("author", userIbp);
 
 				Boolean isDownloadable = checkDownLoadAccess(userProfile, metaLayer);
 				metaLayer.put("isDownloadable", isDownloadable);
@@ -469,9 +465,6 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		if (metaLayer == null)
 			return false;
 
-		// download access is the property of the portal, hence return true irrespective
-		// of portal
-		// if it is All
 		if (metaLayer.get("downloadAccess").toString().equalsIgnoreCase("ALL")) {
 			return true;
 		} else {
@@ -558,7 +551,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 	}
 
 	private void sendFileInChunks(String scheme, String host, String portalId, String apikey, String hash,
-			String fileRole, File file) throws IOException {
+			String fileRole, String originalFilename, File file) throws IOException {
 		long total = file.length();
 		long offset = 0;
 
@@ -574,7 +567,7 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 				try {
 					builder.setScheme(scheme).setHost(host)
 							.setPath("/naksha-api/api/layer/upload/chunk/" + hash + "/" + fileRole)
-							.setParameter("filename", file.getName());
+							.setParameter("filename", originalFilename);
 					uri = builder.build();
 				} catch (URISyntaxException e) {
 					throw new IOException(e);
@@ -645,8 +638,10 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 			String scheme, String portalId, String apikey, File dir, File[] files, TusResultStore.Entry entry) {
 		try {
 			for (File f : files) {
-				String fileRole = f.getName().split("_", 2)[0];
-				sendFileInChunks(scheme, host, portalId, apikey, hash, fileRole, f);
+				String[] roleAndName = f.getName().split("_", 2);
+				String fileRole = roleAndName[0];
+				String originalFilename = roleAndName.length > 1 ? roleAndName[1] : f.getName();
+				sendFileInChunks(scheme, host, portalId, apikey, hash, fileRole, originalFilename, f);
 			}
 
 			Map<String, Object> payload = new HashMap<>();
