@@ -17,5 +17,6 @@ public class NakshaIntegratorControllerModule extends AbstractModule {
 	protected void configure() {
 		bind(NakshaIntegratorController.class).in(Scopes.SINGLETON);
 		bind(GeoserverIntegratorController.class).in(Scopes.SINGLETON);
+		bind(LayerTusUploadController.class).in(Scopes.SINGLETON);
 	}
 }

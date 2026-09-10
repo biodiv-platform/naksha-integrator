@@ -3,10 +3,7 @@
  */
 package com.strandls.nakshaintegrator.controllers;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,7 +26,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
-import jakarta.ws.rs.core.Response.Status;
 
 //import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -42,8 +38,6 @@ import com.strandls.authentication_utility.filter.ValidateUser;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -217,6 +211,41 @@ public class NakshaIntegratorController {
 			throw new WebApplicationException(
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
 		}
+	}
+
+	@Path("upload/{hash}")
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ValidateUser
+	@Operation(summary = "Kick off finalizing a layer upload from already-landed tus files", description = "Returns immediately once the job is queued; poll upload/{hash}/result for completion. Does not itself proxy file bytes, so it never risks a proxy timeout.")
+	public Response uploadFromHash(@Context HttpServletRequest request, @PathParam("hash") String hash,
+			Map<String, Object> metadata) {
+		try {
+			nakshaIntegratorServices.startLayerUploadFromHash(request, hash, metadata);
+			Map<String, Object> accepted = new HashMap<>();
+			accepted.put("resultUrl", request.getRequestURI() + "/result");
+			return Response.status(Response.Status.ACCEPTED).entity(accepted).build();
+		} catch (jakarta.ws.rs.BadRequestException e) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+		} catch (Exception e) {
+			Thread.currentThread().interrupt();
+			throw new WebApplicationException(
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build());
+		}
+	}
+
+	@GET
+	@Path("upload/{hash}" + ApiConstants.RESULT)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ValidateUser
+	@Operation(summary = "Poll the result of a layer upload finalize job")
+	public Response getLayerUploadResult(@PathParam("hash") String hash) {
+		Map<String, Object> body = nakshaIntegratorServices.getLayerUploadResult(hash);
+		if (body == null) {
+			return Response.status(Response.Status.NOT_FOUND).build();
+		}
+		return Response.ok().entity(body).build();
 	}
 
 }
