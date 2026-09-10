@@ -17,6 +17,7 @@ import com.strandls.mail_utility.model.EnumModel.INFO_FIELDS;
 import com.strandls.mail_utility.model.EnumModel.MAIL_TYPE;
 import com.strandls.mail_utility.producer.RabbitMQProducer;
 import com.strandls.mail_utility.util.JsonUtil;
+import com.strandls.nakshaintegrator.RabbitChannelProvider;
 import com.strandls.nakshaintegrator.RabbitMqConnection;
 import com.strandls.nakshaintegrator.services.MailService;
 import com.strandls.user.controller.UserServiceApi;
@@ -26,7 +27,7 @@ public class MailServiceImpl implements MailService {
 	private final Logger logger = LoggerFactory.getLogger(MailServiceImpl.class);
 
 	@Inject
-	private Channel channel;
+	private RabbitChannelProvider channelProvider;
 
 	@Inject
 	private UserServiceApi userServiceApi;
@@ -53,6 +54,7 @@ public class MailServiceImpl implements MailService {
 			Map<String, Object> mData = new HashMap<>();
 			mData.put(INFO_FIELDS.TYPE.getAction(), MAIL_TYPE.DOWNLOAD_MAIL.getAction());
 			mData.put(INFO_FIELDS.RECIPIENTS.getAction(), Arrays.asList(data));
+			Channel channel = channelProvider.get();
 			RabbitMQProducer producer = new RabbitMQProducer(channel);
 			if (user.getEmail() != null && !user.getEmail().isEmpty()) {
 				producer.produceMail(RabbitMqConnection.EXCHANGE_BIODIV, RabbitMqConnection.MAIL_ROUTING_KEY, null,
