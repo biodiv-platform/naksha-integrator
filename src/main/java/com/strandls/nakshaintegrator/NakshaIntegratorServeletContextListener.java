@@ -69,7 +69,7 @@ public class NakshaIntegratorServeletContextListener extends GuiceServletContext
 				try {
 					rabbitConnection = rabbitMqConnection.connect();
 				} catch (Exception e) {
-					logger.error("Failed to establish RabbitMQ connection", e);
+					logger.error("[naksha-integrator] Failed to establish RabbitMQ connection", e);
 				}
 
 				GeometryFactory geofactory = new GeometryFactory(new PrecisionModel(), 4326);
