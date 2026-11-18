@@ -13,7 +13,7 @@ public class TusConfig {
 	public TusConfig() {
 		String storagePath = PropertyFileUtil.fetchProperty("config.properties", "layerTusUploadPath");
 		this.tusFileUploadService = new TusFileUploadService().withStoragePath(storagePath)
-				.withMaxUploadSize(2L * 1024 * 1024 * 1024).withUploadExpirationPeriod(24 * 60 * 60 * 1000L);
+				.withMaxUploadSize(5L * 1024 * 1024 * 1024).withUploadExpirationPeriod(24 * 60 * 60 * 1000L);
 	}
 
 	public TusFileUploadService getService() {
