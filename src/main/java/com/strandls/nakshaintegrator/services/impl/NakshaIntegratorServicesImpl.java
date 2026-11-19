@@ -85,8 +85,13 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 	private final ExecutorService layerFinalizerPool = Executors.newFixedThreadPool(4);
 
 	private static final CloseableHttpClient RELAY_HTTP_CLIENT = HttpClients.custom()
-			.setDefaultRequestConfig(RequestConfig.custom().setConnectTimeout(10_000).setSocketTimeout(120_000)
-					.setConnectionRequestTimeout(10_000).build())
+			.setDefaultRequestConfig(RequestConfig.custom().setConnectTimeout(30_000).setSocketTimeout(300_000)
+					.setConnectionRequestTimeout(30_000).build())
+			.build();
+
+	private static final CloseableHttpClient SESSION_FINALIZE_HTTP_CLIENT = HttpClients.custom()
+			.setDefaultRequestConfig(RequestConfig.custom().setConnectTimeout(30_000).setSocketTimeout(1_800_000)
+					.setConnectionRequestTimeout(30_000).build())
 			.build();
 
 	private byte[] getRequest(String uri, List<NameValuePair> params) {
@@ -507,9 +512,8 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 
 	}
 
-	private byte[] postMultipartEntity(String uri, HttpEntity entity) {
+	private byte[] postMultipartEntity(String uri, HttpEntity entity) throws IOException {
 		CloseableHttpResponse response = null;
-		CloseableHttpClient httpclient = null;
 		byte[] byteArrayResponse = null;
 
 		String host = PropertyFileUtil.fetchProperty("config.properties", "nakshaApiHost");
@@ -520,31 +524,36 @@ public class NakshaIntegratorServicesImpl implements NakshaIntegratorServices {
 		try {
 			URIBuilder builder = new URIBuilder();
 			builder.setScheme(scheme).setHost(host).setPath(uri);
+			URI requestUri;
+			try {
+				requestUri = builder.build();
+			} catch (URISyntaxException e) {
+				throw new IOException("Invalid URI: " + uri, e);
+			}
 
-			HttpPost request = new HttpPost(builder.build());
+			HttpPost request = new HttpPost(requestUri);
 			request.setHeader("Portal-Id", portalId);
 			request.setHeader("api-key", apikey);
 			request.setEntity(entity);
 
-			httpclient = HttpClients.createDefault();
-			response = httpclient.execute(request);
+			response = SESSION_FINALIZE_HTTP_CLIENT.execute(request);
+			int status = response.getStatusLine().getStatusCode();
 			HttpEntity responseEntity = response.getEntity();
 
 			byteArrayResponse = EntityUtils.toByteArray(responseEntity);
 			EntityUtils.consume(responseEntity);
 
-		} catch (Exception e) {
-			logger.error(e.getMessage());
-			logger.error("Error while trying to send request at URL {}", uri);
-		} finally {
-			if (byteArrayResponse != null)
-				HttpClientUtils.closeQuietly(response);
-			try {
-				if (httpclient != null)
-					httpclient.close();
-			} catch (IOException e) {
-				logger.error(e.getMessage());
+			if (status >= 300) {
+				String errorBody = new String(byteArrayResponse, java.nio.charset.StandardCharsets.UTF_8);
+				throw new IOException("HTTP request to " + uri + " failed (status " + status + "): " + errorBody);
 			}
+
+		} catch (Exception e) {
+			logger.error("Error while trying to send request at URL {}: {}", uri, e.getMessage());
+			throw e;
+		} finally {
+			if (response != null)
+				HttpClientUtils.closeQuietly(response);
 		}
 
 		return byteArrayResponse != null ? byteArrayResponse : new byte[0];
